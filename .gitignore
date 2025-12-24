@@ -1,9 +1,9 @@
-# Python bytecode - compiled files
+# Python bytecode - compiled files (Python编译文件)
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Distribution / packaging - build outputs
+# Distribution / packaging - build outputs (构建和打包产物)
 build/
 dist/
 *.egg-info/
@@ -11,8 +11,12 @@ dist/
 *.egg
 MANIFEST
 
-# Environment - virtual environments
+# Environment variables - configuration files (环境变量配置文件)
 .env
+.env.local
+.env.*.local
+
+# Virtual environments - Python virtual environments (Python虚拟环境)
 .venv
 env/
 venv/
@@ -20,15 +24,14 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE - editor and IDE specific files
+# IDE - editor and IDE specific files (编辑器和IDE配置文件)
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# OS generated files - operating system specific files
+# OS generated files - operating system specific files (操作系统生成文件)
 Thumbs.db
 .DS_Store
 .DS_Store?
@@ -37,7 +40,7 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 
-# Testing - test related files and directories
+# Testing - test related files and directories (测试相关文件)
 .pytest_cache/
 .tox/
 .coverage
@@ -48,12 +51,11 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
-.pytest_cache/
 
-# Logs - log files and directories
+# Logs - log files and directories (日志文件)
 logs/
 *.log
 *.log.*
 
-# Data files - large data directories (uncomment if needed)
-# KATX20130717_195021_V06/
+# Data files - large data files (大型数据文件)
+KATX20130717_195021_V06
