@@ -1,1 +1,59 @@
-/__pycache__
+# Python bytecode - compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging - build outputs
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environment - virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE - editor and IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS generated files - operating system specific files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Testing - test related files and directories
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Logs - log files and directories
+logs/
+*.log
+*.log.*
+
+# Data files - large data directories (uncomment if needed)
+# KATX20130717_195021_V06/
