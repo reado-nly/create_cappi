@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import functools
+import multiprocessing
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import median_filter
 
@@ -11,6 +12,10 @@ import os
 
 # 设置环境变量以禁用Py-ART欢迎信息
 os.environ["PYART_QUIET"] = "1"
+
+# Windows系统上使用multiprocessing库的必要步骤
+if __name__ != "__main__":
+    multiprocessing.freeze_support()
 
 # 全局Py-ART库实例
 _pyart = None
@@ -65,12 +70,12 @@ def close_global_pool():
         print("已关闭全局进程池")
 
 # 解决matplotlib新版本兼容性问题
+# 为避免Windows系统上multiprocessing创建的子进程重复显示消息，移除了打印输出
 if not hasattr(matplotlib.cm, 'register_cmap'):
     # 为较新版本的matplotlib添加兼容层
     def register_cmap(**kwargs):
         pass
     matplotlib.cm.register_cmap = register_cmap
-    print("已添加matplotlib.cm.register_cmap兼容层")
 
 
 
@@ -315,21 +320,6 @@ def check_reflectivity(radar):
                     results['status'] = 'warning'
                     results['issues'].append(f'检测到强反射率梯度区域，可能存在强风切变，强梯度像素比例为 {gradient_ratio:.2%}')
                     break
-            
-            # 时间一致性检查（多时间戳数据）
-            if hasattr(radar, 'time') and 'data' in radar.time and len(radar.time['data']) > 1:
-                time_diffs = np.diff(radar.time['data'])
-                mean_time_diff = np.mean(time_diffs)
-                std_time_diff = np.std(time_diffs)
-                
-                results['stats']['time_consistency'] = {
-                    'mean_time_diff': mean_time_diff,
-                    'std_time_diff': std_time_diff
-                }
-                
-                if std_time_diff > mean_time_diff * 0.5:
-                    results['status'] = 'warning'
-                    results['issues'].append(f'时间戳间隔不一致，可能存在数据采集异常')
     except Exception as e:
         results['status'] = 'warning'
         results['issues'].append(f'时空一致性检查异常: {str(e)}')
@@ -675,21 +665,6 @@ def check_radial_velocity(radar):
                     results['status'] = 'warning'
                     results['issues'].append(f'检测到强径向速度梯度区域，可能存在强风切变，强梯度像素比例为 {gradient_ratio:.2%}')
                     break
-            
-            # 时间一致性检查（多时间戳数据）
-            if hasattr(radar, 'time') and 'data' in radar.time and len(radar.time['data']) > 1:
-                time_diffs = np.diff(radar.time['data'])
-                mean_time_diff = np.mean(time_diffs)
-                std_time_diff = np.std(time_diffs)
-                
-                results['stats']['time_consistency'] = {
-                    'mean_time_diff': mean_time_diff,
-                    'std_time_diff': std_time_diff
-                }
-                
-                if std_time_diff > mean_time_diff * 0.5:
-                    results['status'] = 'warning'
-                    results['issues'].append(f'时间戳间隔不一致，可能存在数据采集异常')
     except Exception as e:
         results['status'] = 'warning'
         results['issues'].append(f'径向速度时空一致性检查异常: {str(e)}')
@@ -923,21 +898,6 @@ def check_spectral_width(radar):
                     results['status'] = 'warning'
                     results['issues'].append(f'检测到强速度谱宽梯度区域，可能存在强风切变，强梯度像素比例为 {gradient_ratio:.2%}')
                     break
-            
-            # 时间一致性检查（多时间戳数据）
-            if hasattr(radar, 'time') and 'data' in radar.time and len(radar.time['data']) > 1:
-                time_diffs = np.diff(radar.time['data'])
-                mean_time_diff = np.mean(time_diffs)
-                std_time_diff = np.std(time_diffs)
-                
-                results['stats']['time_consistency'] = {
-                    'mean_time_diff': mean_time_diff,
-                    'std_time_diff': std_time_diff
-                }
-                
-                if std_time_diff > mean_time_diff * 0.5:
-                    results['status'] = 'warning'
-                    results['issues'].append(f'时间戳间隔不一致，可能存在数据采集异常')
     except Exception as e:
         results['status'] = 'warning'
         results['issues'].append(f'速度谱宽时空一致性检查异常: {str(e)}')
@@ -1735,6 +1695,43 @@ def _run_check_wrapper(check_tuple):
         }
 
 
+def check_time_consistency(radar):
+    """
+    检查雷达数据的时间一致性
+    
+    参数:
+        radar (Radar): 雷达数据对象
+    
+    返回:
+        dict: 时间一致性检查结果，包含状态、问题和统计信息
+    """
+    results = {
+        'status': 'pass',
+        'issues': [],
+        'stats': {}
+    }
+    
+    try:
+        # 时间一致性检查（多时间戳数据）
+        if hasattr(radar, 'time') and 'data' in radar.time and len(radar.time['data']) > 1:
+            time_diffs = np.diff(radar.time['data'])
+            mean_time_diff = np.mean(time_diffs)
+            std_time_diff = np.std(time_diffs)
+            
+            results['stats']['time_consistency'] = {
+                'mean_time_diff': mean_time_diff,
+                'std_time_diff': std_time_diff
+            }
+            
+            if std_time_diff > mean_time_diff * 0.5:
+                results['status'] = 'warning'
+                results['issues'].append(f'时间戳间隔不一致，可能存在数据采集异常')
+    except Exception as e:
+        results['status'] = 'warning'
+        results['issues'].append(f'时间一致性检查异常: {str(e)}')
+    
+    return results
+
 @timing_decorator
 def quality_check_radar_data(radar, pool=None, use_parallel=True):
     """
@@ -1750,7 +1747,10 @@ def quality_check_radar_data(radar, pool=None, use_parallel=True):
     """
     print("=== 开始全面雷达数据质量检查 ===")
     
-    # 执行所有检查，按计算复杂度排序（最耗时的放在前面）
+    # 执行全局时间一致性检查（只需要执行一次）
+    time_consistency_result = check_time_consistency(radar)
+    
+    # 执行所有参数检查，按计算复杂度排序（最耗时的放在前面）
     checks = [
         check_reflectivity,  # 最耗时：包含异常值检测、时空一致性检查、极端天气检测
         check_radial_velocity,  # 较耗时：包含异常值检测和时空一致性检查
@@ -1818,6 +1818,10 @@ def quality_check_radar_data(radar, pool=None, use_parallel=True):
                     'stats': {}
                 }
                 all_results.append(error_result)
+    
+    # 将时间一致性检查结果添加到所有检查结果中
+    time_consistency_result['parameter'] = 'time_consistency'
+    all_results.append(time_consistency_result)
     
     # 生成综合报告
     overall_status = 'pass'
